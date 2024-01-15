@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="member">
+    <!--
+        #{id} 전달된 id값으로 치환됨
+        id="findById"의 id는 태그식별자임
+        resultType ResultSet 한 행이 변환될 타입(fullname | alias)
+    -->
+
+<!-- <select id="findById" resultType="com.sh.mybatis.member.model.entity.Member"> -->
+    <select id="findById" resultType="member">
+        select
+            *
+        from
+            member
+        where
+            id = #{id}
+    </select>
+    <select id="findAll" resultType="member">
+        <!--
+            resultType속성은 한행과 매칭되는 타입 작성
+        -->
+        select
+            *
+        from
+            member
+        order by
+            reg_date desc
+    </select>
+
+    <select id="findByName" resultType="member">
+        select
+            *
+        from
+            member
+        where
+            name like '%' || #{name} || '%'
+    </select>
+
+    <select id="findByGender" resultType="member">
+        select
+            *
+        from
+            member
+        where
+            gender = #{gender}
+    </select>
+
+    <insert id="insertMember">
+        <!-- insert는 type안적어줘도됌 select는 무조건 적어야함-->
+        insert into
+            member
+        values(
+            #{id}, #{password}, #{name}, #{role}, #{gender}, #{birthday}, #{email}, #{phone},
+            #{hobby, typeHandler = listStringTypeHandler}, default, default
+        )
+    </insert>
+
+    <update id="updateMember">
+        update
+            member
+        set
+            name = #{name},
+            gender = #{gender},
+            birthday = #{birthday},
+            email = #{email},
+            phone = #{phone},
+            hobby = #{hobby, typeHandler=listStringTypeHandler}
+        where
+            id = #{id}
+    </update>
+    <update id="updateMemberPassword">
+        update
+            member
+        set
+            password = #{password}
+        where
+            id = #{id}
+    </update>
+    <update id="updateMemberRole">
+        update
+            member
+        set
+            role = #{role}
+        where
+            id = #{id}
+    </update>
+
+    <delete id="deleteMember">
+        delete from
+            member
+        where
+            id = #{id}
+    </delete>
+
+    <!-- 식별자(컬럼, 테이블명)작성 시  ${} 문법을 사용할 것, # = 값 -->
+    <select id="searchMember" resultType="member"> <!-- 한개만 반환하려고 resultType -->
+        select
+            *
+        from
+            member
+        where
+            ${searchType} like '%' || #{searchKeyword} || '%'
+    </select>
+
+    <select id="findAllPage" resultType="member">
+        select
+            *
+        from
+            member
+        order by
+            reg_date desc
+    </select>
+
+    <!-- Mybatis타입(byte, long, short, int, double, float, boolean)으로 적을때 _를 적어줘야함  -->
+    <!-- where태그 하위 if구문이 하나라도 실행될때만 where절을 작성한ㄷ.
+         - where다음에 and/of 연산자가 나오면 삭제 처리
+         - 여러개의 if구문 처리에 적합
+     -->
+    <select id="getTotalCount" resultType="_int">
+        select
+            count(*)
+        from
+            member
+        <where>
+            <!-- 검색목록이 있으면서 검색목록이 비어있지않고 검색어가 비어있지않을때 검색해주라 (=> 검색목록은 필수, 검색어는 비어있지만않으면 가능 -->
+            <if test="searchType != null and searchType != '' and searchKeyword != ''">
+<!--                where -->
+                ${searchType} like '%' || #{searchKeyword} || '%'
+            </if>
+            <!-- if가 fail면 where절없이 실행됨 -->
+        </where>
+    </select>
+
+    <select id="getTotalCount2" resultType="_int">
+        select
+            count(*)
+        from
+            member
+        where
+            ${searchType} like '%' || #{searchKeyword} || '%'
+    </select>
+
+</mapper>

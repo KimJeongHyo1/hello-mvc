@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns="http://xmlns.jcp.org/xml/ns/javaee"
+         xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee
+         http://xmlns.jcp.org/xml/ns/javaee/web-app_4_0.xsd" id="WebApp_ID" version="4.0">
+
+    <!-- web.xml 배포서술자 Deploy Descriptor -->
+    <!-- CATALINA_HOME/conf/web.xml를 오버라이드 한다. -->
+    <!-- 1. 서블릿 등록 -->
+    <!-- 2. 필터 등록 -->
+    <!-- 3. 리스너 등록 -->
+    <!-- 4. 에러페이지 등록 -->
+    <!-- 5. session 설정 -->
+    <!-- 6. mime 타입등록 -->
+    <!-- 7. welcome-file 등록 -->
+    <display-name>Archetype Created Web Application</display-name>
+    <!-- 에러페이지 갯수 제한 없음 / 개발할때는 주석해두고 실행할때만 풀어주기 -->
+<!--    <error-page>-->
+<!--        <exception-type>java.lang.Exception</exception-type>-->
+<!--        <location>/WEB-INF/views/common/error.jsp</location>-->
+<!--    </error-page>-->
+
+<!--    <error-page>-->
+<!--        <error-code>404</error-code>-->
+<!--        <location>/WEB-INF/views/common/404.jsp</location>-->
+<!--    </error-page>-->
+</web-app>

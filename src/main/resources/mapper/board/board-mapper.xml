@@ -1,0 +1,276 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="board">
+    <!--
+        #{id} 전달된 id값으로 치환됨
+        id="findById"의 id는 태그식별자임
+        resultType ResultSet 한 행이 변환될 타입(fullname | alias)
+    -->
+
+    <!-- <select id="findById" resultType="com.sh.mybatis.member.model.entity.Member"> -->
+    <select id="findById" resultMap="boardVoMap">
+        select
+            b.*,
+            m.name member_name,
+            a.id attach_id, <!-- 컬럼명 중복이라 한번 더 써줌 -->
+            a.board_id,
+            a.original_filename,
+            a.renamed_filename,
+            a.reg_date attach_reg_date
+        from
+            board b
+            left join member m
+                on b.member_id = m.id
+            left join attachment a
+                on b.id = a.board_id
+        where
+            b.id = #{id}
+    </select>
+    <!--
+       <id/>는 식별자 컬럼
+       <result/>는 식별자가 아닌 컬럼
+       <collection/> 1:N 관계에서 N에 해당하는 속성 처리(List)
+       <association/> 1:1 관계에서 상대 1에 해당하는 속성 처리(vo)
+
+       column -> 컬럼명
+       property -> entity에 컬럼명으로 작성할 수 없으니 카멜케이싱을 적용해 작성한 값
+    -->
+    <resultMap id="boardVoMap" type="boardVo">
+        <id column="title" property="title"/>
+        <result column="member_id" property="memberId"/>
+        <result column="content" property="content"/>
+        <result column="read_count" property="readCount"/>
+        <result column="reg_date" property="regDate"/>
+        <association property="member" javaType="member">
+            <!-- collection전에 작성해야함 -->
+            <id column="member_id" property="id"/>
+            <result column="member_name" property="name"/>
+        </association>
+        <collection property="attachments" ofType="attachment">
+            <id column="attach_id" property="id"/>
+            <result column="board_id" property="boardId"/>
+            <result column="original_filename" property="originalFilename"/>
+            <result column="renamed_filename" property="renamedFilename"/>
+            <result column="attach_reg_date" property="regDate"/>
+        </collection>
+    </resultMap>
+    <!--
+        mybatis를 이용해서 조인쿼리
+        - resultType 대신 resultMap
+        - 1:n 관계라면 <collection> 사용
+        - 1:1 관계라면 <association> 사용
+    -->
+
+    <select id="findAll" resultType="BoardVo">
+        <!--
+            resultType속성은 한행과 매칭되는 타입 작성
+        -->
+        select
+            b.*,
+            (select count(*) from attachment where board_id = b.id) attach_count,
+            (select count(*) from board_comment where board_id = b.id) comment_count
+        from
+            board b
+        order by
+            reg_date desc
+    </select>
+
+    <select id="findByName" resultType="Board">
+        select
+            *
+        from
+            board
+        where
+            name like '%' || #{name} || '%'
+    </select>
+
+    <select id="findByGender" resultType="Board">
+        select
+            *
+        from
+            board
+        where
+            gender = #{gender}
+    </select>
+
+<!--    <insert id="insertBoard">-->
+<!--        &lt;!&ndash; insert는 resultType안적어줘도됌 select는 무조건 적어야함&ndash;&gt;-->
+<!--        insert into-->
+<!--            board-->
+<!--        values(-->
+<!--                #{id}, #{title}, #{memberId}, #{content}, default, default)-->
+<!--    </insert>-->
+
+
+    <update id="updateBoardReadCount">
+        update
+            board
+        set
+            read_count = read_count + 1
+        where
+            id = #{id}
+    </update>
+
+    <insert id="insertBoard">
+        insert into
+            board (id, title, member_id, content)
+        values(
+            seq_board_id.nextval,
+            #{title},
+            #{memberId},
+            #{content}
+            )
+            <selectKey order="AFTER" resultType="_int" keyProperty="id">
+<!--                 무조건 after-->
+                select
+                    seq_board_id.currval
+                from
+                    dual
+            </selectKey>
+    </insert>
+<!--    <selectKey order="AFTER" resultType="_int" keyProperty="id">-->
+    <!-- 값이 들어가야 채번이 가능하기 때문에 여기선 무조건 after -->
+<!--        select-->
+<!--            seq_board_id.currval-->
+<!--        from-->
+<!--            dual-->
+<!--    </selectKey>-->
+    <insert id="insertAttachment">
+        insert into
+         attachment (id, board_id, original_filename, renamed_filename)
+        values(
+            seq_attachment_id.nextval,
+            #{boardId},
+            #{originalFilename},
+            #{renamedFilename}
+        )
+    </insert>
+
+    <update id="updateBoard">
+        update
+            board
+        set
+            title = #{title},
+            content = #{content}
+        where
+            id = #{id}
+    </update>
+
+    <update id="updateBoardPassword">
+        update
+            board
+        set
+            password = #{password}
+        where
+            id = #{id}
+    </update>
+
+    <update id="updateBoardRole">
+        update
+            board
+        set
+            role = #{role}
+        where
+            id = #{id}
+    </update>
+
+    <delete id="deleteBoard">
+        delete from
+            board
+        where
+            id = #{id}
+    </delete>
+
+    <!-- 식별자(컬럼, 테이블명)작성 시  ${} 문법을 사용할 것, # = 값 -->
+    <select id="searchBoard" resultType="Board"> <!-- 한개만 반환하려고 resultType -->
+        select
+            *
+        from
+            board
+        where
+            ${searchType} like '%' || #{searchKeyword} || '%'
+    </select>
+
+    <select id="findAllPage" resultType="Board">
+        select
+            *
+        from
+            board
+        <!-- 값이 모두 존재할때만 sql에 추가하겠다 -->
+        <if test="searchType != null and searchType != '' and searchKeyword != ''">
+        where
+            ${searchType} like '%' || #{searchKeyword} || '%'
+        </if>
+        order by
+            reg_date desc
+    </select>
+
+    <!-- Mybatis타입(byte, long, short, int, double, float, boolean)으로 적을때 _를 적어줘야함  -->
+    <select id="getTotalCount" resultType="_int">
+        select
+            count(*)
+        from
+            board
+    </select>
+
+    <delete id="deleteAttachment">
+        delete from
+            attachment
+        where
+            id = #{id}
+    </delete>
+
+    <select id="findCommentByBoardId" resultType="boardComment">
+        select
+            *
+        from
+            board_comment
+        where
+            board_id = #{boardId}
+        start with
+            comment_level = 1
+        connect by
+            prior id = parent_comment_id
+        order siblings by
+        id
+    </select>
+
+    <insert id="insertBoardComment">
+        insert into
+            board_comment
+        values(
+            seq_board_comment_id.nextval,
+            #{boardId},
+            #{memberId},
+            #{content},
+            #{commentLevel},
+            #{parentCommentId},
+            default
+        )
+        <selectKey order="AFTER" resultType="_long" keyProperty="id">
+            select
+                seq_board_comment_id.currval
+            from
+                dual
+        </selectKey>
+    </insert>
+
+    <select id="findCommentById" resultType="boardComment">
+        select
+            *
+        from
+            board_comment
+        where
+            id = #{id}
+    </select>
+
+    <delete id="deleteBoardComment">
+        delete from
+            board_comment
+        where
+            id = #{id}
+    </delete>
+
+</mapper>
